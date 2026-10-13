@@ -72,8 +72,9 @@ them; `src/cmd/dp-hello` is the executable.
 
 ### 3.3 Data flow
 1. `main` calls `app.Run(os.Args[1:], os.Stdout, os.Stderr)`.
-2. `cli.Parse` scans left to right. A syntax error returns a `UsageError`; `--help` or
-   `--version` returns immediately with that action (CONV-12).
+2. `cli.Parse` scans left to right, only collecting operands and recording values. An option
+   syntax error returns a `UsageError`; `--help` or `--version` returns immediately with that
+   action (CONV-12).
 3. For `Help`/`Version`, `app` writes the constant text and exits 0.
 4. Otherwise `validate.Validate` reports the first operand, then an empty NAME, then an invalid
    COUNT, or returns a `Config`.
@@ -86,7 +87,7 @@ them; `src/cmd/dp-hello` is the executable.
 | # | Decision | Alternatives considered | Rationale |
 | :-- | :-- | :-- | :-- |
 | D1 | Hand-written option scanner over a fixed option table | `flag` package; third-party parsers | `flag` does not implement CONV-07 bundling, GNU diagnostics, or the CONV-12 scan order; third-party parsers are not allowed |
-| D2 | Parse (syntax) and validate (values) are separate passes | Validate each value as it is scanned | Last-wins (FR-06) means only the final value may be validated; `--help` after an invalid value still prints help, as in the reference model |
+| D2 | Parse (syntax) and validate (values) are separate passes | Validate each value as it is scanned | Last-wins (FR-06) means only the final value may be validated, and CONV-12 (curriculum v1.4.0) detects operand and value errors only after the scan: `extra --help` and `--count 0 --help` print the help, while `-x --help` reports the invalid option |
 | D3 | `Run(args, stdout, stderr) int` core with a one-line `main` | Logic in `main` using `os` directly | End-to-end behavior is unit-testable with `bytes.Buffer`; no globals (Principle 16) |
 | D4 | Errors are values (`*diagnostics.UsageError`), never panics | `panic`/`recover`, `log.Fatal` | CONV-24 forbids stack traces; explicit returns keep control flow visible |
 | D5 | Stream repeated greetings through `bufio.Writer` | Build the whole output in memory | Memory stays bounded for any NAME length × 1000 (NFR-02) |
@@ -120,7 +121,7 @@ silent.
 
 | Quality attribute | SRS reference | How the design achieves it |
 | :-- | :-- | :-- |
-| Performance / memory | NFR-02 | Native executable; O(arguments) parsing; buffered streaming output (4 KiB buffer plus one line) |
+| Performance / memory | NFR-02, CONV-31 | Native executable, so the 32 MiB limit applies to the whole process (no runtime baseline is subtracted); O(arguments) parsing; buffered streaming output (4 KiB buffer plus one line) |
 | Portability | NFR-01 | Raw-byte output with LF constants; runtime-provided UTF-8 arguments; identical code on every OS |
 | Robustness | NFR-03 | No panics: slicing guarded by length checks, overflow-free COUNT parsing, errors returned as values |
 | Security / input validation | NFR-07 | No file, environment, or process APIs are used; every value is validated before use |

@@ -29,7 +29,7 @@ applicable requirement as Verified.
 | Item | Version / location |
 | :-- | :-- |
 | dp-hello | `00-hello-world/src/` (module `github.com/dialectic-playground/go/00-hello-world`) on branch `feat/00-hello-world` |
-| Unit tests | `src/internal/*/*_test.go` (18 test functions, 97 test results with subtests) |
+| Unit tests | `src/internal/*/*_test.go` (18 test functions, 100 test results with subtests) |
 | Public black-box suite | `sdlc-curriculum/projects/00-hello-world/tests/public/` (10 tests) |
 | Hidden black-box suite | `sdlc-curriculum/projects/00-hello-world/tests/private/` (10 tests, run by CI) |
 
@@ -67,7 +67,7 @@ applicable requirement as Verified.
 | T-06 | FR-02 | — | `-n-x`, `--name=-x`, `--name -x` | NAME `-x` | unit |
 | T-07 | CONV-09, FR-09 | — | `-- -n` | `extra operand '-n'`, exit 2 | integration |
 | T-08 | CONV-12 | — | `-x --help` | `invalid option -- 'x'`, exit 2 | integration |
-| T-09 | CONV-12, FR-07 | — | `-c 0 --help`, `extra --help` | help text, exit 0 | integration |
+| T-09 | CONV-12, FR-07, FR-09 | — | `-c 0 --help`, `--count 0 --help`, `extra --help`, `extra --name= --version` | help or version text, exit 0 (operand and value errors are detected after the scan) | integration |
 | T-10 | CONV-05 | — | `-c2 -nZoë`; operand `Zoë`; `-ë` | UTF-8 bytes echoed exactly | integration |
 | T-11 | CONV-08 | — | `--nam=Ada`, `--=x` | `unrecognized option '<token>'` | unit |
 | T-12 | CONV-25 | Writer that always fails | `Run(nil, failing, stderr)` | status 1, stderr empty | integration |
@@ -83,7 +83,9 @@ length checks, and every error is a returned value.
 ### 4.4 Performance and resource testing
 NFR-02 is measured in the container with a Python harness that runs
 `bin/dp-hello -c 1000 -n <100 000-character name>` 20 times with output to the null device:
-average 1.7 ms per run and 11 MiB peak RSS (limits: 100 ms, 32 MiB). Memory is independent of
+average 1.7 ms per run and 11 MiB peak RSS (limits: 100 ms, 32 MiB). This is a natively
+compiled build, so under CONV-31 the limit applies to the whole process and no runtime
+baseline is subtracted. Memory is independent of
 output size because output is streamed through a 4 KiB buffer.
 
 ## 5. Test environments
@@ -135,7 +137,7 @@ the full CI matrix re-runs on the pull request.
 
 | Metric | Value |
 | :-- | :-- |
-| Unit tests (pass / total) | 97 / 97 (18 test functions with subtests) |
+| Unit tests (pass / total) | 100 / 100 (18 test functions with subtests) |
 | Coverage (line / branch) | 100 % of statements in `cli`, `validate`, `greeting`, `diagnostics`, `app`; 85.7 % in `output` (the in-loop write-error branch; failures surface at the final flush); `cmd/dp-hello` covered by black-box tests |
 | Public black-box (pass / 10) | 10 / 10 |
 | Hidden black-box (pass / 10, from CI) | 10 / 10 |

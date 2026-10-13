@@ -141,8 +141,9 @@ A failed write to stdout is not an error type: `app.Run` returns status 1 withou
 The only non-trivial algorithm is the option scan (§3.1–§3.2), a single left-to-right pass in
 the style of GNU `getopt_long` with permutation: operands may be interleaved with options, the
 last value wins, and the first `--help`/`--version` ends the scan. Value checks are deferred to
-`Validate` (HLD D2), so `dp-hello -c 0 -c 5` succeeds and `dp-hello -c 0 --help` prints help, as
-the curriculum's reference model does. A table of four options with linear lookup is the
+`Validate` (HLD D2), so `dp-hello -c 0 -c 5` succeeds, and `dp-hello -c 0 --help` and
+`dp-hello extra --help` print the help, as CONV-12 (curriculum v1.4.0) requires; only option
+syntax errors (`dp-hello -x --help`) win over a later `--help`. A table of four options with linear lookup is the
 simplest adequate structure (Principle 12).
 
 ## 5. Platform-specific details

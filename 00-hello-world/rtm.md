@@ -39,7 +39,7 @@ are `P01` … `P10`.
 | FR-04 | Repetition 1–1000, leading zeros | LLD §3.4, §3.6 | `internal/validate/validate.go::ParseCount`, `internal/output/output.go::WriteRepeated` | `TestParseCountAccepted`, `TestWriteRepeated`, `TestRunSuccess/maximum_count`, `TestRunSuccess/leading_zeros`, P05, P06 | Verified |
 | FR-05 | Invalid count rejected | LLD §3.3, §3.4 | `internal/validate/validate.go::ParseCount`, `::Validate` | `TestParseCountRejected`, `TestValidateRejected`, `TestRunUsageErrors/count_zero`, `…/count_non-digit`, `…/count_above_maximum` | Verified |
 | FR-06 | Last occurrence wins | HLD D2, LLD §3.1 | `internal/cli/cli.go::store` | `TestParseAccepted/last_occurrence_wins`, `TestParseAccepted/count_last_wins_with_spelling`, `TestRunSuccess/last_wins;_earlier_invalid_values_ignored` | Verified |
-| FR-07 | Help text, scan order | HLD §3.3, LLD §3.1, §3.5 | `internal/cli/cli.go::Parse`, `internal/greeting/greeting.go::HelpText`, `internal/app/app.go::Run` | `TestParseAccepted/help_stops_the_scan`, `TestHelpTextLayout`, `TestRunSuccess/help_ends_the_scan`, P07 | Verified |
+| FR-07 | Help text, scan order | HLD §3.3, LLD §3.1, §3.5 | `internal/cli/cli.go::Parse`, `internal/greeting/greeting.go::HelpText`, `internal/app/app.go::Run` | `TestParseAccepted/help_stops_the_scan`, `TestHelpTextLayout`, `TestRunSuccess/help_ends_the_scan`, `TestRunSuccess/help_beats_earlier_operands`, P07 | Verified |
 | FR-08 | Version line | LLD §3.5 | `internal/greeting/greeting.go::VersionLine`, `internal/app/app.go::Run` | `TestVersionLine`, `TestRunSuccess/version`, P08 | Verified |
 | FR-09 | Operands rejected | LLD §3.3 | `internal/validate/validate.go::Validate`, `internal/diagnostics/diagnostics.go::ExtraOperand` | `TestValidateRejected/operand_first`, `TestRunUsageErrors/operand`, `TestRunUsageErrors/operand_after_terminator`, P10 | Verified |
 | FR-10 | Unknown and malformed options | LLD §2.3, §3.1, §3.2 | `internal/cli/cli.go::Parse`, `::parseShortBundle`, `internal/diagnostics/diagnostics.go` | `TestParseRejected`, `TestMessages`, `TestRunUsageErrors`, P09 | Verified |
@@ -61,7 +61,7 @@ are `P01` … `P10`.
 | CONV-09 | `--` terminator | LLD §3.1 | `internal/cli/cli.go::Parse` | `TestParseAccepted/terminator_makes_operands`, `TestRunUsageErrors/operand_after_terminator` | Verified |
 | CONV-10 | Operands, `-` is an operand | LLD §3.1 | `internal/cli/cli.go::Parse` | `TestParseAccepted/single_dash_is_an_operand`, `…/operands_interleaved`, P10 | Verified |
 | CONV-11 | Last occurrence wins | LLD §3.1 | `internal/cli/cli.go::store` | `TestParseAccepted/last_occurrence_wins` | Verified |
-| CONV-12 | Scan order, errors before output | HLD D2, LLD §4 | `internal/cli/cli.go::Parse`, `internal/app/app.go::Run` | `TestParseRejected/error_before_help_wins`, `TestRunSuccess/help_beats_earlier_invalid_values`, `TestRunUsageErrors/error_before_help` | Verified |
+| CONV-12 | Scan order: only syntax errors precede `--help`/`--version`; operand and value errors after the scan | HLD D2, LLD §4 | `internal/cli/cli.go::Parse`, `internal/validate/validate.go::Validate`, `internal/app/app.go::Run` | `TestParseRejected/error_before_help_wins`, `TestParseAccepted/help_after_operand`, `TestRunSuccess/help_beats_earlier_operands`, `TestRunSuccess/help_beats_an_earlier_invalid_long_value`, `TestRunSuccess/version_beats_earlier_operands_and_empty_name`, `TestRunUsageErrors/error_before_help` | Verified |
 | CONV-13 | Exact usage messages | LLD §2.3 | `internal/diagnostics/diagnostics.go` | `TestMessages`, `TestParseRejected`, `TestValidateRejected`, P09, P10 | Verified |
 | CONV-14 | Hint line, exit 2 | LLD §2.3, §3.7 | `internal/diagnostics/diagnostics.go::Report`, `internal/app/app.go::reportUsage` | `TestReportFormatsBothLines`, `TestRunUsageErrors`, P09, P10 | Verified |
 | CONV-15 | Values verbatim, empty as `''` | LLD §2.3 | `internal/diagnostics/diagnostics.go::InvalidArgument` | `TestMessages/empty_invalid_argument`, `TestValidateRejected/count_empty` | Verified |
@@ -70,6 +70,7 @@ are `P01` … `P10`.
 | CONV-23 | Help text verbatim, trailing LF | LLD §3.5 | `internal/greeting/greeting.go::HelpText` | `TestHelpTextLayout`, P07 | Verified |
 | CONV-24 | No crash or stack trace | HLD D4 | all packages | as NFR-03 | Verified |
 | CONV-25 | Broken pipe ends silently | HLD §6, LLD §5 | `internal/app/app.go::Run`, `internal/output/output.go` | `TestRunOutputFailureIsSilent`, `TestWriteReportsFailure` | Verified |
+| CONV-31 | Memory limits for native builds | HLD §7, MTP §4.4 | `internal/output/output.go::WriteRepeated` (bounded buffer) | MTP §4.4 measurement (whole-process peak RSS, no baseline subtracted) | Verified |
 | CONV-26 | Stdin not read | HLD §3.1 | `cmd/dp-hello/main.go::main` (no stdin access) | Inspection | Verified |
 
 ## 3. Backward traceability (test → requirement)
@@ -94,7 +95,7 @@ are `P01` … `P10`.
 | `TestHelpTextLayout`, `TestVersionLine` | unit | FR-07, FR-08, CONV-02, CONV-23 |
 | `TestReportFormatsBothLines`, `TestMessages` | unit | CONV-01, CONV-13 … CONV-15 |
 | `TestWrite`, `TestWriteRepeated`, `TestWriteReportsFailure` | unit | FR-04, NFR-02, CONV-25 |
-| `TestRunSuccess` | unit (end to end) | FR-01 … FR-08, CONV-05, CONV-12, CONV-18 |
+| `TestRunSuccess` | unit (end to end) | FR-01 … FR-09, CONV-05, CONV-12, CONV-18 |
 | `TestRunUsageErrors` | unit (end to end) | FR-03, FR-05, FR-09 … FR-11, CONV-13, CONV-14 |
 | `TestRunOutputFailureIsSilent` | unit (end to end) | CONV-25, NFR-03 |
 
@@ -105,7 +106,7 @@ are `P01` … `P10`.
 | User requirements (UR) | 12 | 12 | 12 | 12 |
 | Functional (FR) | 11 | 11 | 11 | 11 |
 | Non-functional (NFR) | 7 | 7 | 7 | 7 |
-| Conventions (CONV, applicable) | 20 | 20 | 20 | 20 |
+| Conventions (CONV, applicable) | 21 | 21 | 21 | 21 |
 
 ## 5. Gaps and justifications
 

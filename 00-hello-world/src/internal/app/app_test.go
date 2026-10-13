@@ -36,6 +36,8 @@ func TestRunSuccess(t *testing.T) {
 		{"help ends the scan", []string{"--help", "extra", "-x"}, greeting.HelpText},
 		{"help beats earlier invalid values", []string{"-c", "0", "--help"}, greeting.HelpText},
 		{"help beats earlier operands", []string{"extra", "--help"}, greeting.HelpText},
+		{"help beats an earlier invalid long value", []string{"--count", "0", "--help"}, greeting.HelpText},
+		{"version beats earlier operands and empty name", []string{"extra", "--name=", "--version"}, greeting.VersionLine},
 		{"version", []string{"--version"}, greeting.VersionLine},
 	}
 	for _, tc := range cases {
@@ -59,6 +61,7 @@ func TestRunUsageErrors(t *testing.T) {
 		{"missing value", []string{"--name"}, "option '--name' requires an argument"},
 		{"version with value", []string{"--version=1"}, "option '--version' doesn't allow an argument"},
 		{"error before help", []string{"-x", "--help"}, "invalid option -- 'x'"},
+		{"syntax error on a flag before version", []string{"--help=x", "--version"}, "option '--help' doesn't allow an argument"},
 		{"empty name", []string{"--name", ""}, "invalid argument '' for '--name'"},
 		{"count zero", []string{"--count", "0"}, "invalid argument '0' for '--count'"},
 		{"count non-digit", []string{"-c", "abc"}, "invalid argument 'abc' for '-c'"},

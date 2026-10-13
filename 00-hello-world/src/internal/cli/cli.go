@@ -95,7 +95,9 @@ func (inv *Invocation) store(opt option, text, spelled string) {
 
 // Parse scans args (the command line without the program name) from left to right. It
 // stops at the first --help or --version and returns that action (CONV-12). The first
-// syntax error found before that point is returned as a usage error instead.
+// option syntax error found before that point is returned as a usage error instead.
+// Operands are only collected and values only recorded: their errors are detected after
+// the scan, by package validate, so they never take precedence over --help or --version.
 func Parse(args []string) (Invocation, *diagnostics.UsageError) {
 	var inv Invocation
 	for index := 0; index < len(args); index++ {
