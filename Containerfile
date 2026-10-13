@@ -1,13 +1,16 @@
-# Toolchain image for REPO-NAME (container-first; see tools/dp-run).
+# Toolchain image for dialectic-playground/go: Go (container-first; see tools/dp-run).
 #
-# TEMPLATE: replace the base image with the official image for this repository's toolchain,
-# pinned by its multi-architecture index digest (FROM image:tag@sha256:...), and add only
-# what that image lacks. Keep `make` and the final ENV line. Dependabot (docker) keeps the
-# pin current.
-FROM docker.io/library/debian:trixie-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f
+# Go 1.27; build and package tool: Go modules.
+# Official base image pinned by multi-architecture index digest, plus make and python3 (for the
+# curriculum's black-box runner). Dependabot (docker) refreshes the digest; moving to a new
+# release line is a deliberate change (keep `make toolchain` and the native CI in step).
+FROM docker.io/library/golang:1.27-trixie@sha256:47667934874913a449b96faa7ef4777fa285d9ec29126ee80ed61c45b7cccf0e
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends make git ca-certificates \
+    && apt-get install -y --no-install-recommends make python3 \
     && rm -rf /var/lib/apt/lists/*
 
-ENV DP_IN_CONTAINER=1
+# GOPATH in the mounted cache; never download a different Go toolchain.
+ENV GOPATH=/dp-cache/go \
+    GOTOOLCHAIN=local \
+    DP_IN_CONTAINER=1
