@@ -53,7 +53,8 @@ check-repository:
 toolchain:
 	python3 --version || python --version
 	make --version | head -1
-	go version | tee /dev/stderr | grep -q 'go1\.27\.'
+	@version="$$(go version)"; echo "$$version"; echo "$$version" | grep -q 'go1\.27\.' \
+		|| { echo "toolchain: expected a version matching go1\.27\." >&2; exit 1; }
 
 projects:
 	@[ -n "$(strip $(IMPLEMENTED))" ] || echo "projects: none implemented yet (IMPLEMENTED is empty)"
