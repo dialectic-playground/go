@@ -16,7 +16,7 @@ This repository implements the eleven projects of the
 specified to the byte by the curriculum and verified by its black-box tests on Linux, macOS,
 and Windows.
 
-**Status:** repository and toolchain ready; no projects implemented yet.
+**Status:** Implemented projects: 00-hello-world.
 
 ## Go at a glance
 
@@ -38,6 +38,19 @@ and Windows.
 | Native CI | actions/setup-go (1.27.x) |
 
 `make toolchain` verifies that the container and native toolchains are on this release line.
+
+| Task | Tool | Project hook |
+| :-- | :-- | :-- |
+| Build | `go build -trimpath -o bin/<tool>` | `make all` (executables in the project's `bin/`) |
+| Unit tests | `go test ./...` (standard `testing` package) | `make test` (then the public black-box suite) |
+| Lint | `go vet ./...` and `gofmt -l` (fails if any file is listed) | `make lint` |
+| Format | `gofmt -w` | `make format` |
+
+All of these ship with the Go distribution, so the container image and the native CI need
+nothing beyond Go itself, and the formatter is always the toolchain's own version. Each
+project is a Go module (`go.mod` in the project directory) with its command in
+`src/cmd/<tool>/` and its units in `src/internal/`. The projects use only the standard
+library, so there is no `go.sum`; Dependabot (`gomod`) watches each module.
 
 ## Layout
 

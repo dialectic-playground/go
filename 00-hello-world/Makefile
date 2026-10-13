@@ -21,17 +21,32 @@ TOOLS   := dp-hello
 # Path to the sdlc-curriculum checkout (the specs, test suites, and runner live there).
 CURRICULUM_ROOT ?= ../sdlc-curriculum
 
-# Directory that contains the built executables after `make all`, e.g. build/bin.
-BIN_DIR :=
+# Go (modules): go.mod lives here (no third-party dependencies, so there is no go.sum);
+# the command is src/cmd/dp-hello and its units are packages under src/internal/. Build and
+# module caches live outside the project (GOCACHE, GOPATH).
+GO      ?= go
+GOFMT   ?= gofmt
+PACKAGE := ./src/cmd/$(TOOLS)
+
+# Directory that contains the built executables after `make all`.
+BIN_DIR := bin
 
 # Language-specific commands. Use $(TOOLS), $(EXE), $(PREFIX), and $(BINDIR) as needed.
-DP_BUILD     =
-DP_INSTALL   =
-DP_UNINSTALL =
-DP_UNIT_TEST =
-DP_LINT      =
-DP_FORMAT    =
-DP_CLEAN     =
-DP_DISTCLEAN =
+DP_BUILD     = $(GO) build -trimpath -o "$(BIN_DIR)/$(TOOLS)$(EXE)" $(PACKAGE)
+define DP_INSTALL
+mkdir -p "$(BINDIR)"
+cp "$(BIN_DIR)/$(TOOLS)$(EXE)" "$(BINDIR)/$(TOOLS)$(EXE)"
+endef
+DP_UNINSTALL = rm -f "$(BINDIR)/$(TOOLS)$(EXE)"
+DP_UNIT_TEST = $(GO) test ./...
+# go vet, then fail if gofmt would change any file.
+define DP_LINT
+$(GO) vet ./...
+@unformatted="$$($(GOFMT) -l src)"; [ -z "$$unformatted" ] || { printf 'gofmt: run make format; unformatted files:\n%s\n' "$$unformatted" >&2; exit 1; }
+endef
+DP_FORMAT    = $(GOFMT) -w src
+DP_CLEAN     = rm -rf "$(BIN_DIR)"
+# Nothing else lives in the project directory: Go keeps its caches in GOCACHE and GOPATH.
+DP_DISTCLEAN = rm -rf "$(BIN_DIR)"
 
 include $(CURRICULUM_ROOT)/shared/templates/BASE-MAKEFILE

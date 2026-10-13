@@ -10,3 +10,9 @@ __pycache__/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Repository-specific
+# Go build output (each project's BIN_DIR) and test/coverage artifacts
+/*/bin/
+*.test
+coverage.out
