@@ -13,7 +13,7 @@
 
 # Project directories whose implementation is complete enough to build and test, in
 # curriculum order (for example: 00-hello-world 01-echo). CI covers exactly these.
-IMPLEMENTED :=
+IMPLEMENTED := 00-hello-world
 
 DP_HOST_GOALS += help roundtrip
 include tools/container.mk
@@ -49,12 +49,15 @@ check-repository:
 	exit $$status
 
 # Prints each tool's version and fails unless it is on the repository's release line
-# (Go 1.27), so the container image and the native CI toolchains stay in step.
+# (Go 1.27), so the container image and the native CI toolchains stay in step. go vet and
+# gofmt (the lint and format tools) ship with the Go distribution, so they share its version.
 toolchain:
 	python3 --version || python --version
 	make --version | head -1
 	@version="$$(go version)"; echo "$$version"; echo "$$version" | grep -q 'go1\.27\.' \
 		|| { echo 'toolchain: expected a version matching go1\.27\.' >&2; exit 1; }
+	@gofmt="$$(command -v gofmt)" && echo "gofmt: $$gofmt" \
+		|| { echo 'toolchain: gofmt not found (it ships with Go)' >&2; exit 1; }
 
 projects:
 	@[ -n "$(strip $(IMPLEMENTED))" ] || echo "projects: none implemented yet (IMPLEMENTED is empty)"

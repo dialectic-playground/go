@@ -1,5 +1,5 @@
 # Keeps GitHub Actions (SHA-pinned) and the toolchain image digest current.
-# Package ecosystems (Go modules) are added when the first project's manifests exist.
+# Go modules: one entry per project module (go.mod in the project directory).
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -23,3 +23,10 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  - package-ecosystem: gomod
+    directory: /00-hello-world
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
