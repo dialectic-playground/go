@@ -6,6 +6,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       github-actions:
         patterns: ["*"]
@@ -16,6 +18,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: build
     # The release line (Go 1.27) is a deliberate choice shared with the native CI and
@@ -29,5 +33,20 @@ updates:
     directory: /00-hello-world
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: build
+
+  # Hook revisions in .pre-commit-config.yaml (enforced by the pre-commit CI job).
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      pre-commit:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
