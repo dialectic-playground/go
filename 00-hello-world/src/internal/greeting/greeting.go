@@ -2,15 +2,14 @@
 package greeting
 
 // HelpText is the help output from the user manual, byte for byte (FR-07, CONV-23).
-const HelpText = `Usage: dp-hello [OPTION]...
-Print a greeting to standard output.
-
-Options:
-  -n, --name=NAME     greet NAME instead of World
-  -c, --count=COUNT   print the greeting COUNT times (1-1000, default 1)
-      --help          display this help and exit
-      --version       output version information and exit
-`
+const HelpText = "Usage: dp-hello [OPTION]...\n" +
+	"Print a greeting to standard output.\n" +
+	"\n" +
+	"Options:\n" +
+	"  -n, --name=NAME     greet NAME instead of World\n" +
+	"  -c, --count=COUNT   print the greeting COUNT times (1-1000, default 1)\n" +
+	"      --help          display this help and exit\n" +
+	"      --version       output version information and exit\n"
 
 // VersionLine is the --version output (FR-08, CONV-02).
 const VersionLine = "dp-hello (dialectic-playground) 1.0.0\n"
