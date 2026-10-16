@@ -1,14 +1,42 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
+
+- [Low-Level Design (LLD) — Standard Terminal Hello World](#low-level-design-lld--standard-terminal-hello-world)
+  - [1. Source layout](#1-source-layout)
+  - [2. Data types](#2-data-types)
+    - [2.1 `cli.Invocation`](#21-cliinvocation)
+    - [2.2 `validate.Config`](#22-validateconfig)
+    - [2.3 Error type](#23-error-type)
+  - [3. Module and function specifications](#3-module-and-function-specifications)
+    - [3.1 `cli.Parse`](#31-cliparse)
+    - [3.2 `(*Invocation).parseShortBundle` (private)](#32-invocationparseshortbundle-private)
+    - [3.3 `validate.Validate`](#33-validatevalidate)
+    - [3.4 `validate.ParseCount`](#34-validateparsecount)
+    - [3.5 `greeting.Line`, `greeting.HelpText`, `greeting.VersionLine`](#35-greetingline-greetinghelptext-greetingversionline)
+    - [3.6 `output.Write`, `output.WriteRepeated`](#36-outputwrite-outputwriterepeated)
+    - [3.7 `app.Run`](#37-apprun)
+    - [3.8 `main`](#38-main)
+  - [4. Algorithms](#4-algorithms)
+  - [5. Platform-specific details](#5-platform-specific-details)
+  - [6. Resource management](#6-resource-management)
+  - [7. Sequence of one invocation](#7-sequence-of-one-invocation)
+  - [8. Design-to-code checklist](#8-design-to-code-checklist)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Low-Level Design (LLD) — Standard Terminal Hello World
 
-| Field | Value |
-| :-- | :-- |
-| Project | `00-hello-world` |
-| Tools | dp-hello |
-| Implementation language | go (Go 1.27, standard library only) |
-| Author | Brandon Perkins |
-| Version / date | 1.0 — 2026-10-13 |
-| Status | Approved |
-| Inputs | `hld.md`, `specs/SRS.md`, `shared/CLI-CONVENTIONS.md` |
+| Field                   | Value                                                 |
+| :---------------------- | :---------------------------------------------------- |
+| Project                 | `00-hello-world`                                      |
+| Tools                   | dp-hello                                              |
+| Implementation language | go (Go 1.27, standard library only)                   |
+| Author                  | Brandon Perkins                                       |
+| Version / date          | 1.0 — 2026-10-13                                      |
+| Status                  | Approved                                              |
+| Inputs                  | `hld.md`, `specs/SRS.md`, `shared/CLI-CONVENTIONS.md` |
 
 ## 1. Source layout
 
@@ -32,40 +60,44 @@ bin/dp-hello[.exe]                      build output (BIN_DIR), not committed
 ## 2. Data types
 
 ### 2.1 `cli.Invocation`
-| Field | Type | Default | Constraint / invariant | SRS |
-| :-- | :-- | :-- | :-- | :-- |
-| `Action` | `cli.Action` (`Greet`, `Help`, `Version`) | `Greet` | `Help`/`Version` only when that option was the first one reached | FR-07, FR-08, CONV-12 |
-| `Name` | `*cli.Value` | `nil` (not given) | Last occurrence of `-n`/`--name` | FR-02, FR-06 |
-| `Count` | `*cli.Value` | `nil` (not given) | Last occurrence of `-c`/`--count` | FR-04, FR-06 |
-| `Operands` | `[]string` | empty | In command-line order, including every token after `--` | FR-09, CONV-09, CONV-10 |
+
+| Field      | Type                                      | Default           | Constraint / invariant                                           | SRS                     |
+| :--------- | :---------------------------------------- | :---------------- | :--------------------------------------------------------------- | :---------------------- |
+| `Action`   | `cli.Action` (`Greet`, `Help`, `Version`) | `Greet`           | `Help`/`Version` only when that option was the first one reached | FR-07, FR-08, CONV-12   |
+| `Name`     | `*cli.Value`                              | `nil` (not given) | Last occurrence of `-n`/`--name`                                 | FR-02, FR-06            |
+| `Count`    | `*cli.Value`                              | `nil` (not given) | Last occurrence of `-c`/`--count`                                | FR-04, FR-06            |
+| `Operands` | `[]string`                                | empty             | In command-line order, including every token after `--`          | FR-09, CONV-09, CONV-10 |
 
 `cli.Value` holds `Text` (the raw value) and `Option` (the spelling, `-n` or `--name`).
 
 ### 2.2 `validate.Config`
-| Field | Type | Default | Constraint / invariant | SRS |
-| :-- | :-- | :-- | :-- | :-- |
-| `Name` | `string` | `"World"` | Non-empty | FR-01 … FR-03 |
-| `Count` | `int` | `1` | `1 ≤ Count ≤ 1000` | FR-04, FR-05 |
+
+| Field   | Type     | Default   | Constraint / invariant | SRS           |
+| :------ | :------- | :-------- | :--------------------- | :------------ |
+| `Name`  | `string` | `"World"` | Non-empty              | FR-01 … FR-03 |
+| `Count` | `int`    | `1`       | `1 ≤ Count ≤ 1000`     | FR-04, FR-05  |
 
 ### 2.3 Error type
+
 `*diagnostics.UsageError{Message}`; `Report()` returns `dp-hello: <Message>\n` +
 `Try 'dp-hello --help' for more information.\n`. Exit status 2 for every variant.
 
-| Constructor | Message (after `dp-hello: `) |
-| :-- | :-- |
-| `InvalidShortOption(x)` | `invalid option -- 'x'` |
-| `UnrecognizedOption(token)` | `unrecognized option 'token'` |
-| `ShortOptionRequiresArgument(x)` | `option requires an argument -- 'x'` |
-| `LongOptionRequiresArgument(name)` | `option '--name' requires an argument` |
+| Constructor                         | Message (after `dp-hello:`)                 |
+| :---------------------------------- | :------------------------------------------ |
+| `InvalidShortOption(x)`             | `invalid option -- 'x'`                     |
+| `UnrecognizedOption(token)`         | `unrecognized option 'token'`               |
+| `ShortOptionRequiresArgument(x)`    | `option requires an argument -- 'x'`        |
+| `LongOptionRequiresArgument(name)`  | `option '--name' requires an argument`      |
 | `LongOptionDisallowsArgument(name)` | `option '--name' doesn't allow an argument` |
-| `InvalidArgument(value, option)` | `invalid argument 'value' for 'option'` |
-| `ExtraOperand(operand)` | `extra operand 'operand'` |
+| `InvalidArgument(value, option)`    | `invalid argument 'value' for 'option'`     |
+| `ExtraOperand(operand)`             | `extra operand 'operand'`                   |
 
 A failed write to stdout is not an error type: `app.Run` returns status 1 without a message.
 
 ## 3. Module and function specifications
 
 ### 3.1 `cli.Parse`
+
 - **Signature:** `func Parse(args []string) (Invocation, *diagnostics.UsageError)`
 - **Responsibility:** syntactic scan of the arguments.
 - **Preconditions:** `args` excludes the program name.
@@ -85,6 +117,7 @@ A failed write to stdout is not an error type: `app.Run` returns status 1 withou
 - **Unit tests:** `TestParseAccepted`, `TestParseRejected` (`cli_test.go`).
 
 ### 3.2 `(*Invocation).parseShortBundle` (private)
+
 - **Signature:** `func (inv *Invocation) parseShortBundle(token string, rest []string) (consumedNext bool, err *diagnostics.UsageError)`
 - **Algorithm:** decode the first letter after `-` as one UTF-8 rune (so `-ë` is reported as
   `'ë'`). Unknown → `InvalidShortOption`. Both short options take a value, so the value is the
@@ -94,6 +127,7 @@ A failed write to stdout is not an error type: `app.Run` returns status 1 withou
   `TestParseAccepted/bundle_consumes_rest_of_token`, `TestParseRejected/unknown_short_option`.
 
 ### 3.3 `validate.Validate`
+
 - **Signature:** `func Validate(inv cli.Invocation) (Config, *diagnostics.UsageError)`
 - **Algorithm:** (1) any operand → `ExtraOperand(Operands[0])`; (2) NAME given and empty →
   `InvalidArgument("", spelling)`; (3) COUNT given and `ParseCount` fails →
@@ -102,6 +136,7 @@ A failed write to stdout is not an error type: `app.Run` returns status 1 withou
   `TestValidateValues`, `TestValidateRejected`.
 
 ### 3.4 `validate.ParseCount`
+
 - **Signature:** `func ParseCount(text string) (count int, ok bool)`
 - **Algorithm:** reject empty text; for each byte, reject anything outside `'0'…'9'`; accumulate
   `count = count*10 + digit` only while `count ≤ 1000`, so long inputs cannot overflow; accept
@@ -110,6 +145,7 @@ A failed write to stdout is not an error type: `app.Run` returns status 1 withou
 - **Satisfies:** FR-04, FR-05. **Unit tests:** `TestParseCountAccepted`, `TestParseCountRejected`.
 
 ### 3.5 `greeting.Line`, `greeting.HelpText`, `greeting.VersionLine`
+
 - **Signature:** `func Line(name string) string`; two string constants.
 - **Responsibility:** pure text construction: `"Hello, " + name + "!\n"`; the help text exactly
   as in the user manual; `dp-hello (dialectic-playground) 1.0.0\n`.
@@ -117,6 +153,7 @@ A failed write to stdout is not an error type: `app.Run` returns status 1 withou
   `TestHelpTextLayout`, `TestVersionLine`.
 
 ### 3.6 `output.Write`, `output.WriteRepeated`
+
 - **Signatures:** `func Write(w io.Writer, text string) error`;
   `func WriteRepeated(w io.Writer, line string, count int) error`
 - **Algorithm:** `Write` uses `io.WriteString`. `WriteRepeated` writes `line` `count` times into a
@@ -125,6 +162,7 @@ A failed write to stdout is not an error type: `app.Run` returns status 1 withou
   `TestWriteRepeated`, `TestWriteReportsFailure`.
 
 ### 3.7 `app.Run`
+
 - **Signature:** `func Run(args []string, stdout, stderr io.Writer) int`
 - **Algorithm:** `cli.Parse` → on error `reportUsage` (write `Report()` to stderr, return 2).
   `Help`/`Version` → write the constant, return 0. Otherwise `validate.Validate` → on error
@@ -134,6 +172,7 @@ A failed write to stdout is not an error type: `app.Run` returns status 1 withou
 - **Unit tests:** `TestRunSuccess`, `TestRunUsageErrors`, `TestRunOutputFailureIsSilent`.
 
 ### 3.8 `main`
+
 `os.Exit(app.Run(os.Args[1:], os.Stdout, os.Stderr))`. Covered by P01–P10.
 
 ## 4. Algorithms
@@ -148,13 +187,13 @@ simplest adequate structure (Principle 12).
 
 ## 5. Platform-specific details
 
-| Concern | Linux | macOS | Windows | Abstraction |
-| :-- | :-- | :-- | :-- | :-- |
-| Argument encoding | Raw bytes (UTF-8) in `os.Args` | Same | Go runtime converts the UTF-16 command line to UTF-8 `os.Args` | Go runtime; `main` passes `os.Args[1:]` |
-| Newline translation | None | None | None: `os.File` has no text mode | Not needed |
-| Console output | Bytes | Bytes | UTF-8 converted to UTF-16 by Go for consoles; raw bytes for pipes/files | Go runtime |
-| Broken pipe | Write on fd 1 raises SIGPIPE; the runtime exits silently | Same | Write error → `Run` returns 1 silently | `app.Run` |
-| Executable name | `bin/dp-hello` | `bin/dp-hello` | `bin/dp-hello.exe` (`$(EXE)`) | Makefile |
+| Concern             | Linux                                                    | macOS          | Windows                                                                 | Abstraction                             |
+| :------------------ | :------------------------------------------------------- | :------------- | :---------------------------------------------------------------------- | :-------------------------------------- |
+| Argument encoding   | Raw bytes (UTF-8) in `os.Args`                           | Same           | Go runtime converts the UTF-16 command line to UTF-8 `os.Args`          | Go runtime; `main` passes `os.Args[1:]` |
+| Newline translation | None                                                     | None           | None: `os.File` has no text mode                                        | Not needed                              |
+| Console output      | Bytes                                                    | Bytes          | UTF-8 converted to UTF-16 by Go for consoles; raw bytes for pipes/files | Go runtime                              |
+| Broken pipe         | Write on fd 1 raises SIGPIPE; the runtime exits silently | Same           | Write error → `Run` returns 1 silently                                  | `app.Run`                               |
+| Executable name     | `bin/dp-hello`                                           | `bin/dp-hello` | `bin/dp-hello.exe` (`$(EXE)`)                                           | Makefile                                |
 
 ## 6. Resource management
 
@@ -165,6 +204,7 @@ before `Run` returns, and `os.Exit` is called only after that.
 ## 7. Sequence of one invocation
 
 Public test P06, `dp-hello -c2 -n Ken`:
+
 1. `main` → `app.Run(["-c2", "-n", "Ken"], os.Stdout, os.Stderr)`.
 2. `cli.Parse`: `-c2` → `parseShortBundle` stores Count `{"2", "-c"}`; `-n` has no attached text,
    so it takes `Ken` (`consumedNext`), storing Name `{"Ken", "-n"}`. Result: `Action = Greet`.
@@ -174,12 +214,12 @@ Public test P06, `dp-hello -c2 -n Ken`:
 
 ## 8. Design-to-code checklist
 
-| HLD component | LLD section | Source file(s) | Unit-test file(s) |
-| :-- | :-- | :-- | :-- |
-| `cli` | §3.1, §3.2 | `src/internal/cli/cli.go` | `src/internal/cli/cli_test.go` |
-| `validate` | §3.3, §3.4 | `src/internal/validate/validate.go` | `src/internal/validate/validate_test.go` |
-| `greeting` | §3.5 | `src/internal/greeting/greeting.go` | `src/internal/greeting/greeting_test.go` |
-| `output` | §3.6 | `src/internal/output/output.go` | `src/internal/output/output_test.go` |
-| `diagnostics` | §2.3 | `src/internal/diagnostics/diagnostics.go` | `src/internal/diagnostics/diagnostics_test.go` |
-| `app` | §3.7 | `src/internal/app/app.go` | `src/internal/app/app_test.go` |
-| `cmd/dp-hello` | §3.8 | `src/cmd/dp-hello/main.go` | public black-box P01–P10 |
+| HLD component  | LLD section | Source file(s)                            | Unit-test file(s)                              |
+| :------------- | :---------- | :---------------------------------------- | :--------------------------------------------- |
+| `cli`          | §3.1, §3.2  | `src/internal/cli/cli.go`                 | `src/internal/cli/cli_test.go`                 |
+| `validate`     | §3.3, §3.4  | `src/internal/validate/validate.go`       | `src/internal/validate/validate_test.go`       |
+| `greeting`     | §3.5        | `src/internal/greeting/greeting.go`       | `src/internal/greeting/greeting_test.go`       |
+| `output`       | §3.6        | `src/internal/output/output.go`           | `src/internal/output/output_test.go`           |
+| `diagnostics`  | §2.3        | `src/internal/diagnostics/diagnostics.go` | `src/internal/diagnostics/diagnostics_test.go` |
+| `app`          | §3.7        | `src/internal/app/app.go`                 | `src/internal/app/app_test.go`                 |
+| `cmd/dp-hello` | §3.8        | `src/cmd/dp-hello/main.go`                | public black-box P01–P10                       |
